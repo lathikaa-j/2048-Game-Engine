@@ -1,4 +1,5 @@
 #include "core/Game.h"
+#include "exceptions/InvalidMoveException.h"
 
 Game::Game() { newGame(); }
 
@@ -12,6 +13,12 @@ void Game::newGame() {
 }
 
 bool Game::move(Direction direction) {
+    // An invalid enum is a caller error, unlike an ordinary blocked move.
+    switch (direction) {
+        case Direction::Left: case Direction::Right:
+        case Direction::Up: case Direction::Down: break;
+        default: throw InvalidMoveException("Unknown movement direction");
+    }
     if (state != GameState::Playing) {
         return false;
     }

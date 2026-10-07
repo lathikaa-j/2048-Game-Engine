@@ -24,6 +24,7 @@ private:
 public:
     Game();
     void newGame();
+    // Blocked moves return false; invalid Direction enum values throw InvalidMoveException.
     bool move(Direction direction);
     bool undo();
     void pause();

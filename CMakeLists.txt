@@ -1,16 +1,22 @@
 cmake_minimum_required(VERSION 3.10)
 project(Game2048Engine LANGUAGES CXX)
-
-add_executable(game2048
-    main.cpp
-    src/core/Tile.cpp
-    src/core/Board.cpp
-    src/core/Game.cpp
-)
-
-target_include_directories(game2048 PRIVATE include)
-set_target_properties(game2048 PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED YES
-    CXX_EXTENSIONS NO
-)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+add_library(engine2048 src/core/Tile.cpp src/core/Board.cpp src/core/Game.cpp)
+target_include_directories(engine2048 PUBLIC include)
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(engine_regression tests/Regression.cpp)
+    target_link_libraries(engine_regression PRIVATE engine2048)
+    add_test(NAME backend_regression COMMAND engine_regression)
+endif()
+option(GAME2048_BUILD_GUI "Build SFML desktop application" ON)
+if(GAME2048_BUILD_GUI)
+    find_package(SFML 2.6 CONFIG REQUIRED COMPONENTS graphics window system)
+    add_executable(game2048 main.cpp src/ui/Renderer.cpp)
+    target_link_libraries(game2048 PRIVATE engine2048 sfml-graphics sfml-window sfml-system)
+    add_custom_command(TARGET game2048 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets" "$<TARGET_FILE_DIR:game2048>/assets")
+endif()
