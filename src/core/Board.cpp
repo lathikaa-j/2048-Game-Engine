@@ -1,5 +1,8 @@
 #include "core/Board.h"
 
+#include <iomanip>
+#include <ostream>
+
 Board::Board()
     : grid(BOARD_SIZE, std::vector<Tile>(BOARD_SIZE)),
       randomGenerator(std::random_device{}()), lastMoveScore(0) {}
@@ -144,4 +147,29 @@ bool Board::canMove() const {
 
 bool Board::isGameOver() const {
     return !canMove();
+}
+
+bool Board::operator==(const Board& other) const {
+    for (std::size_t row = 0; row < BOARD_SIZE; ++row) {
+        for (std::size_t col = 0; col < BOARD_SIZE; ++col) {
+            if (grid[row][col].getValue() != other.grid[row][col].getValue()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool Board::operator!=(const Board& other) const {
+    return !(*this == other);
+}
+
+std::ostream& operator<<(std::ostream& os, const Board& board) {
+    for (std::size_t row = 0; row < Board::BOARD_SIZE; ++row) {
+        for (std::size_t col = 0; col < Board::BOARD_SIZE; ++col) {
+            os << std::setw(6) << board.grid[row][col].getValue();
+        }
+        os << '\n';
+    }
+    return os;
 }

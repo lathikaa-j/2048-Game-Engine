@@ -1,12 +1,15 @@
 #include "core/Board.h"
 #include "core/Tile.h"
+#include "core/Game.h"
 
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <type_traits>
 #include <vector>
 
-// Temporary console test harness for Phases 1-6.
-enum class Direction { Left, Right, Up, Down };
+static_assert(std::is_same<decltype(std::declval<Game&>().getBoard()), const Board&>::value,
+              "Game board access must be read-only");
 
 struct DemoCase {
     const char* name;
@@ -186,6 +189,203 @@ void checkBoardState(int& testsPassed, int& testsFailed) {
                 testsPassed, testsFailed);
 }
 
+bool moveBoard(Board& board, Direction direction) {
+    switch (direction) {
+        case Direction::Left: return board.moveLeft();
+        case Direction::Right: return board.moveRight();
+        case Direction::Up: return board.moveUp();
+        case Direction::Down: return board.moveDown();
+    }
+    return false;
+}
+
+std::size_t occupiedCount(const Board& board) {
+    std::size_t count = 0;
+    for (const auto& row : snapshot(board)) {
+        for (int value : row) {
+            if (value != 0) { ++count; }
+        }
+    }
+    return count;
+}
+
+bool initialTilesValid(const Game& game) {
+    bool valid = occupiedCount(game.getBoard()) == 2;
+    for (const auto& row : snapshot(game.getBoard())) {
+        for (int value : row) {
+            valid = valid && (value == 0 || value == 2 || value == 4);
+        }
+    }
+    return valid;
+}
+
+void checkNewPhases(int& testsPassed, int& testsFailed) {
+    std::cout << "\nPHASE 7 - GAME CONTROLLER\n";
+    Game game;
+    recordCheck("Initialization: exactly two 2/4 tiles", initialTilesValid(game),
+                testsPassed, testsFailed);
+    recordCheck("Initial score and state", game.getScore() == 0
+                && game.getState() == GameState::Playing, testsPassed, testsFailed);
+    const Board initial = game.getBoard();
+    game.resume();
+    game.pause();
+    game.pause();
+    recordCheck("Pause blocks all directions", game.getState() == GameState::Paused
+                && !game.move(Direction::Left) && !game.move(Direction::Right)
+                && !game.move(Direction::Up) && !game.move(Direction::Down)
+                && game.getBoard() == initial && game.getScore() == 0 && !game.undo(),
+                testsPassed, testsFailed);
+    game.resume();
+    game.resume();
+    recordCheck("Resume returns to Playing", game.getState() == GameState::Playing,
+                testsPassed, testsFailed);
+
+    std::cout << "\nPHASE 8 - BOARD OPERATORS\n";
+    Board a;
+    Board b;
+    a.setTile(0, 0, 2);
+    b.setTile(0, 0, 2);
+    recordCheck("Identical boards compare equal", a == b && !(a != b),
+                testsPassed, testsFailed);
+    b.setTile(3, 3, 4);
+    recordCheck("One differing tile compares unequal", a != b && !(a == b),
+                testsPassed, testsFailed);
+    Board scored;
+    scored.setTile(0, 0, 2);
+    scored.setTile(0, 1, 2);
+    scored.moveLeft();
+    Board sameValues;
+    sameValues.setTile(0, 0, 4);
+    recordCheck("Equality ignores RNG and last move score", scored == sameValues,
+                testsPassed, testsFailed);
+    std::ostringstream printed;
+    const Board beforePrint = b;
+    std::ostream& streamResult = printed << b;
+    recordCheck("Stream insertion: matrix, chaining, no mutation",
+                &streamResult == &printed && b == beforePrint && printed.str() ==
+                "     2     0     0     0\n"
+                "     0     0     0     0\n"
+                "     0     0     0     0\n"
+                "     0     0     0     4\n", testsPassed, testsFailed);
+    std::cout << "Board << demonstration:\n" << b;
+
+    std::cout << "\nPHASE 9 - HISTORY / UNDO\n";
+    History<int> numbers;
+    recordCheck("History<int> initially empty", numbers.empty() && numbers.size() == 0,
+                testsPassed, testsFailed);
+    numbers.push(10);
+    numbers.push(20);
+    const History<int>& readOnlyHistory = numbers;
+    recordCheck("History push/top/size", !numbers.empty() && numbers.size() == 2
+                && readOnlyHistory.top() == 20, testsPassed, testsFailed);
+    const int last = numbers.pop();
+    recordCheck("History pop uses LIFO", last == 20 && numbers.top() == 10
+                && numbers.size() == 1 && numbers.pop() == 10 && numbers.empty(),
+                testsPassed, testsFailed);
+    numbers.push(30);
+    numbers.clear();
+    recordCheck("History clear", numbers.empty() && numbers.size() == 0,
+                testsPassed, testsFailed);
+    bool topRejected = false;
+    bool popRejected = false;
+    try { numbers.top(); } catch (const std::out_of_range&) { topRejected = true; }
+    try { numbers.pop(); } catch (const std::out_of_range&) { popRejected = true; }
+    recordCheck("Empty History access fails safely", topRejected && popRejected
+                && numbers.empty(), testsPassed, testsFailed);
+    recordCheck("Empty game undo returns false", !game.undo(), testsPassed, testsFailed);
+
+    const std::vector<Direction> directions = {
+        Direction::Left, Direction::Right, Direction::Up, Direction::Down
+    };
+    std::vector<Board> boards;
+    std::vector<int> scores;
+    bool workflowValid = true;
+    bool invalidValid = true;
+    bool sawInvalid = false;
+    bool sawMerge = false;
+    // Probe copies to choose valid moves without changing Game encapsulation.
+    // Continue until the first merge and no-change move have both been exercised.
+    for (int turn = 0; turn < 10000 && game.getState() == GameState::Playing; ++turn) {
+        bool moved = false;
+        for (Direction direction : directions) {
+            Board expected = game.getBoard();
+            const int oldScore = game.getScore();
+            if (!moveBoard(expected, direction)) {
+                sawInvalid = true;
+                invalidValid = invalidValid && !game.move(direction)
+                    && game.getBoard() == expected && game.getScore() == oldScore
+                    && game.getState() == GameState::Playing;
+                continue;
+            }
+            if (moved) { continue; }
+            boards.push_back(game.getBoard());
+            scores.push_back(oldScore);
+            workflowValid = game.move(direction) && workflowValid;
+            const auto values = snapshot(expected);
+            std::size_t newTiles = 0;
+            for (std::size_t row = 0; row < expected.getSize(); ++row) {
+                for (std::size_t col = 0; col < expected.getSize(); ++col) {
+                    const int value = game.getBoard().getTile(row, col).getValue();
+                    if (values[row][col] != 0) {
+                        workflowValid = workflowValid && value == values[row][col];
+                    } else if (value != 0) {
+                        ++newTiles;
+                        workflowValid = workflowValid && (value == 2 || value == 4);
+                    }
+                }
+            }
+            const GameState expectedState = game.getBoard().hasWon() ? GameState::Won
+                : game.getBoard().isGameOver() ? GameState::Lost : GameState::Playing;
+            workflowValid = workflowValid && newTiles == 1
+                && occupiedCount(game.getBoard()) == occupiedCount(expected) + 1
+                && game.getScore() == oldScore + expected.getLastMoveScore()
+                && game.getState() == expectedState;
+            sawMerge = sawMerge || expected.getLastMoveScore() > 0;
+            moved = true;
+            break;
+        }
+        if (!moved || (sawInvalid && sawMerge && boards.size() >= 3)) { break; }
+    }
+    recordCheck("Valid moves: scoring, one spawn, state update", workflowValid
+                && sawMerge && boards.size() >= 3, testsPassed, testsFailed);
+    recordCheck("No-change moves preserve board, score and state", sawInvalid && invalidValid,
+                testsPassed, testsFailed);
+    bool boardRestored = true;
+    bool scoreRestored = true;
+    bool stateRestored = true;
+    for (std::size_t index = boards.size(); index > 0; --index) {
+        const bool undone = game.undo();
+        boardRestored = boardRestored && undone && game.getBoard() == boards[index - 1];
+        scoreRestored = scoreRestored && game.getScore() == scores[index - 1];
+        stateRestored = stateRestored && game.getState() == GameState::Playing;
+    }
+    recordCheck("Multiple undo restores boards and removes spawned tiles", boardRestored,
+                testsPassed, testsFailed);
+    recordCheck("Undo restores total score including merges", scoreRestored,
+                testsPassed, testsFailed);
+    recordCheck("Undo restores state", stateRestored, testsPassed, testsFailed);
+    recordCheck("Invalid moves created no history entries", !game.undo()
+                && game.getBoard() == initial, testsPassed, testsFailed);
+
+    for (Direction direction : directions) {
+        Board probe = game.getBoard();
+        if (moveBoard(probe, direction)) { game.move(direction); break; }
+    }
+    game.pause();
+    recordCheck("Undo while paused restores pre-move Playing state", game.undo()
+                && game.getBoard() == initial && game.getState() == GameState::Playing,
+                testsPassed, testsFailed);
+    for (Direction direction : directions) {
+        Board probe = game.getBoard();
+        if (moveBoard(probe, direction)) { game.move(direction); break; }
+    }
+    game.pause();
+    game.newGame();
+    recordCheck("New game resets board, score, state and history", initialTilesValid(game)
+                && game.getScore() == 0 && game.getState() == GameState::Playing
+                && !game.undo(), testsPassed, testsFailed);
+}
+
 int main() {
     const std::vector<DemoCase> demos = {
         {"LEFT: gaps", Direction::Left, {{2, 0, 2, 0}}, {{4, 0, 0, 0}}, true},
@@ -280,6 +480,7 @@ int main() {
 
     std::cout << "\nPHASE 6 - WIN/GAME OVER\n";
     checkBoardState(testsPassed, testsFailed);
+    checkNewPhases(testsPassed, testsFailed);
     std::cout << "\nTests executed: " << testsPassed + testsFailed
               << "\nTests passed: " << testsPassed
               << "\nTests failed: " << testsFailed << '\n';

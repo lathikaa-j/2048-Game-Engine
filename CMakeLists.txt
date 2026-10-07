@@ -5,6 +5,7 @@ add_executable(game2048
     main.cpp
     src/core/Tile.cpp
     src/core/Board.cpp
+    src/core/Game.cpp
 )
 
 target_include_directories(game2048 PRIVATE include)

@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/game2048.dir/main.cpp.obj.d"
   "CMakeFiles/game2048.dir/src/core/Board.cpp.obj"
   "CMakeFiles/game2048.dir/src/core/Board.cpp.obj.d"
+  "CMakeFiles/game2048.dir/src/core/Game.cpp.obj"
+  "CMakeFiles/game2048.dir/src/core/Game.cpp.obj.d"
   "CMakeFiles/game2048.dir/src/core/Tile.cpp.obj"
   "CMakeFiles/game2048.dir/src/core/Tile.cpp.obj.d"
   "game2048.exe"

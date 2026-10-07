@@ -1,5 +1,6 @@
-CMakeFiles/game2048.dir/main.cpp.obj: \
- C:\Users\91787\Documents\2048\ game\ engine\2048-Game-Engine\main.cpp \
+CMakeFiles/game2048.dir/src/core/Game.cpp.obj: \
+ C:\Users\91787\Documents\2048\ game\ engine\2048-Game-Engine\src\core\Game.cpp \
+ C:/Users/91787/Documents/2048\ game\ engine/2048-Game-Engine/include/core/Game.h \
  C:/Users/91787/Documents/2048\ game\ engine/2048-Game-Engine/include/core/Board.h \
  C:/Users/91787/Documents/2048\ game\ engine/2048-Game-Engine/include/core/Tile.h \
  c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\cstddef \
@@ -93,50 +94,6 @@ CMakeFiles/game2048.dir/main.cpp.obj: \
  c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\random.tcc \
  c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\numeric \
  c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\stl_numeric.h \
- C:/Users/91787/Documents/2048\ game\ engine/2048-Game-Engine/include/core/Game.h \
  C:/Users/91787/Documents/2048\ game\ engine/2048-Game-Engine/include/core/GameState.h \
  C:/Users/91787/Documents/2048\ game\ engine/2048-Game-Engine/include/utils/History.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\stdexcept \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\iomanip \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\ios_base.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_classes.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_classes.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\system_error \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\mingw32\bits\error_constants.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\locale \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_facets.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\cwctype \
- c:\mingw\include\wctype.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\mingw32\bits\ctype_base.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\streambuf \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\streambuf.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\streambuf_iterator.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\mingw32\bits\ctype_inline.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_facets.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_facets_nonio.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\ctime c:\mingw\include\time.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\mingw32\bits\time_members.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\mingw32\bits\messages_members.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\codecvt.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_facets_nonio.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\locale_conv.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\stringfwd.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\allocator.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\codecvt.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\unique_ptr.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\utility \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\stl_relops.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\tuple \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\array \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\uses_allocator.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\quoted_string.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\sstream \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\istream \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\ios \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\basic_ios.h \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\basic_ios.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\ostream \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\ostream.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\istream.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\bits\sstream.tcc \
- c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\iostream
+ c:\mingw\lib\gcc\mingw32\6.3.0\include\c++\stdexcept

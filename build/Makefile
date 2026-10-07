@@ -176,6 +176,30 @@ src/core/Board.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\game2048.dir\build.make CMakeFiles/game2048.dir/src/core/Board.cpp.s
 .PHONY : src/core/Board.cpp.s
 
+src/core/Game.obj: src/core/Game.cpp.obj
+.PHONY : src/core/Game.obj
+
+# target to build an object file
+src/core/Game.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\game2048.dir\build.make CMakeFiles/game2048.dir/src/core/Game.cpp.obj
+.PHONY : src/core/Game.cpp.obj
+
+src/core/Game.i: src/core/Game.cpp.i
+.PHONY : src/core/Game.i
+
+# target to preprocess a source file
+src/core/Game.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\game2048.dir\build.make CMakeFiles/game2048.dir/src/core/Game.cpp.i
+.PHONY : src/core/Game.cpp.i
+
+src/core/Game.s: src/core/Game.cpp.s
+.PHONY : src/core/Game.s
+
+# target to generate assembly for a file
+src/core/Game.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\game2048.dir\build.make CMakeFiles/game2048.dir/src/core/Game.cpp.s
+.PHONY : src/core/Game.cpp.s
+
 src/core/Tile.obj: src/core/Tile.cpp.obj
 .PHONY : src/core/Tile.obj
 
@@ -215,6 +239,9 @@ help:
 	@echo ... src/core/Board.obj
 	@echo ... src/core/Board.i
 	@echo ... src/core/Board.s
+	@echo ... src/core/Game.obj
+	@echo ... src/core/Game.i
+	@echo ... src/core/Game.s
 	@echo ... src/core/Tile.obj
 	@echo ... src/core/Tile.i
 	@echo ... src/core/Tile.s

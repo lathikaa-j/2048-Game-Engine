@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/Users/91787/Documents/2048 game engine/2048-Game-Engine/main.cpp" "CMakeFiles/game2048.dir/main.cpp.obj" "gcc" "CMakeFiles/game2048.dir/main.cpp.obj.d"
   "C:/Users/91787/Documents/2048 game engine/2048-Game-Engine/src/core/Board.cpp" "CMakeFiles/game2048.dir/src/core/Board.cpp.obj" "gcc" "CMakeFiles/game2048.dir/src/core/Board.cpp.obj.d"
+  "C:/Users/91787/Documents/2048 game engine/2048-Game-Engine/src/core/Game.cpp" "CMakeFiles/game2048.dir/src/core/Game.cpp.obj" "gcc" "CMakeFiles/game2048.dir/src/core/Game.cpp.obj.d"
   "C:/Users/91787/Documents/2048 game engine/2048-Game-Engine/src/core/Tile.cpp" "CMakeFiles/game2048.dir/src/core/Tile.cpp.obj" "gcc" "CMakeFiles/game2048.dir/src/core/Tile.cpp.obj.d"
   )
 
