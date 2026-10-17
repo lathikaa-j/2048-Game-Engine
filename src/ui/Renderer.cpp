@@ -27,14 +27,48 @@ void Renderer::drawCenteredText(sf::RenderWindow& window, const std::string& lab
 }
 
 void Renderer::drawScore(sf::RenderWindow& window, const Game& game) const {
-    drawCenteredText(window, "Score: " + std::to_string(game.getScore()), 26,
-        {WINDOW_WIDTH / 2.f, SCORE_Y}, ink);
+    sf::RectangleShape card({280.f, 62.f});
+    card.setPosition(50.f, 103.f);
+    card.setFillColor(sf::Color(237, 228, 216));
+    window.draw(card);
+    drawCenteredText(window, "SCORE", 16, {190.f, 118.f}, ink);
+    drawCenteredText(window, std::to_string(game.getScore()), 26, {190.f, 145.f}, ink);
+    newGameButton.draw(window, font);
+}
+
+bool Renderer::restartClicked(const sf::Event& event, sf::Vector2f point,
+                              const Game& game) const {
+    if (event.type != sf::Event::MouseButtonPressed
+        || event.mouseButton.button != sf::Mouse::Left
+        || game.getState() == GameState::Paused) { return false; }
+    return newGameButton.contains(point) ||
+        ((game.getState() == GameState::Won || game.getState() == GameState::Lost)
+         && overlayButton.contains(point));
+}
+
+void Renderer::drawOverlay(sf::RenderWindow& window, const Game& game) const {
+    const bool won = game.getState() == GameState::Won;
+    if (!won && game.getState() != GameState::Lost) { return; }
+    sf::RectangleShape veil({BOARD_SIZE, BOARD_SIZE});
+    veil.setPosition((WINDOW_WIDTH - BOARD_SIZE) / 2.f, BOARD_TOP);
+    veil.setFillColor(sf::Color(248, 245, 239, 225));
+    window.draw(veil);
+    drawCenteredText(window, won ? "You reached 2048!" : "Game Over!", 36,
+                     {300.f, 365.f}, ink);
+    drawCenteredText(window, won ? "Congratulations, beautifully played!"
+                                : "No moves remain. Try again!", 21, {300.f, 415.f}, ink);
+    drawCenteredText(window, "Final score: " + std::to_string(game.getScore()), 24,
+                     {300.f, 458.f}, ink);
+    overlayButton.draw(window, font);
+    drawCenteredText(window, "U: Undo  |  R: New Game  |  Esc: Quit", 18,
+                     {300.f, 578.f}, ink);
 }
 
 void Renderer::render(sf::RenderWindow& window, const Game& game) const {
     drawCenteredText(window, "2048", 56, {WINDOW_WIDTH / 2.f, TITLE_Y}, ink);
     drawScore(window, game);
     drawBoard(window, game.getBoard());
+    drawOverlay(window, game);
     const char* state = "Playing";
     switch (game.getState()) {
         case GameState::Playing: break;
@@ -42,7 +76,9 @@ void Renderer::render(sf::RenderWindow& window, const Game& game) const {
         case GameState::Won: state = "Won"; break;
         case GameState::Lost: state = "Game Over"; break;
     }
-    drawCenteredText(window, state, 18, {WINDOW_WIDTH / 2.f, STATE_Y}, ink);
+    drawCenteredText(window, "Move: Arrow Keys / WASD", 17, {300.f, 710.f}, ink);
+    drawCenteredText(window, std::string("Undo: U  |  Restart: R  |  Esc: Quit  -  ") + state,
+                     15, {300.f, 735.f}, ink);
 }
 
 void Renderer::drawBoard(sf::RenderWindow& window, const Board& board) const {

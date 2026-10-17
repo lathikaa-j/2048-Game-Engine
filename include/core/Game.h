@@ -23,6 +23,8 @@ private:
 
 public:
     Game();
+    // Construct a session from a board snapshot (also useful for deterministic scenarios).
+    explicit Game(const Board& initialBoard, int initialScore = 0);
     void newGame();
     // Blocked moves return false; invalid Direction enum values throw InvalidMoveException.
     bool move(Direction direction);

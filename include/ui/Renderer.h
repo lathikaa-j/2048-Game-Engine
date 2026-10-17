@@ -1,5 +1,6 @@
 #pragma once
 #include "core/Game.h"
+#include "ui/Button.h"
 #include <SFML/Graphics.hpp>
 #include <string>
 
@@ -11,12 +12,13 @@
 class Renderer {
 private:
     sf::Font font;
+    Button newGameButton{{365.f, 111.f, 185.f, 48.f}, "New Game"};
+    Button overlayButton{{200.f, 495.f, 200.f, 50.f}, "New Game"};
+    void drawOverlay(sf::RenderWindow& window, const Game& game) const;
     static constexpr float BOARD_SIZE = 500.f;
     static constexpr float BOARD_TOP = 195.f;
     static constexpr float CELL_GAP = 12.f;
     static constexpr float TITLE_Y = 65.f;
-    static constexpr float SCORE_Y = 133.f;
-    static constexpr float STATE_Y = 720.f;
     void drawBoard(sf::RenderWindow& window, const Board& board) const;
     void drawTile(sf::RenderWindow& window, int value, sf::Vector2f position, float size) const;
     void drawScore(sf::RenderWindow& window, const Game& game) const;
@@ -29,5 +31,6 @@ public:
     static constexpr unsigned int WINDOW_HEIGHT = 750;
     explicit Renderer(const std::string& fontPath);
     void render(sf::RenderWindow& window, const Game& game) const;
+    bool restartClicked(const sf::Event& event, sf::Vector2f point, const Game& game) const;
     static sf::Color backgroundColor();
 };

@@ -3,6 +3,12 @@
 
 Game::Game() { newGame(); }
 
+Game::Game(const Board& initialBoard, int initialScore)
+    : board(initialBoard), score(initialScore), state(GameState::Playing) {
+    if (initialScore < 0) { throw GameException("Score cannot be negative"); }
+    updateState();
+}
+
 void Game::newGame() {
     board.clear();
     score = 0;
