@@ -3,6 +3,7 @@
 #include "core/Tile.h"
 
 #include <cstddef>
+#include <iosfwd>
 #include <random>
 #include <vector>
 
@@ -38,4 +39,8 @@ public:
     bool hasWon() const;
     bool canMove() const;
     bool isGameOver() const;
+
+    bool operator==(const Board& other) const;
+    bool operator!=(const Board& other) const;
+    friend std::ostream& operator<<(std::ostream& os, const Board& board);
 };
