@@ -53,14 +53,14 @@ void Renderer::drawOverlay(sf::RenderWindow& window, const Game& game) const {
     veil.setPosition((WINDOW_WIDTH - BOARD_SIZE) / 2.f, BOARD_TOP);
     veil.setFillColor(sf::Color(248, 245, 239, 225));
     window.draw(veil);
-    drawCenteredText(window, won ? "You reached 2048!" : "Game Over!", 36,
+    drawCenteredText(window, won ? "Target reached!" : "Game Over!", 36,
                      {300.f, 365.f}, ink);
     drawCenteredText(window, won ? "Congratulations, beautifully played!"
                                 : "No moves remain. Try again!", 21, {300.f, 415.f}, ink);
     drawCenteredText(window, "Final score: " + std::to_string(game.getScore()), 24,
                      {300.f, 458.f}, ink);
     overlayButton.draw(window, font);
-    drawCenteredText(window, "U: Undo  |  R: New Game  |  Esc: Quit", 18,
+    drawCenteredText(window, "U: Undo  |  R: New Game  |  Esc: Menu", 18,
                      {300.f, 578.f}, ink);
 }
 
@@ -77,7 +77,7 @@ void Renderer::render(sf::RenderWindow& window, const Game& game) const {
         case GameState::Lost: state = "Game Over"; break;
     }
     drawCenteredText(window, "Move: Arrow Keys / WASD", 17, {300.f, 710.f}, ink);
-    drawCenteredText(window, std::string("Undo: U  |  Restart: R  |  Esc: Quit  -  ") + state,
+    drawCenteredText(window, std::string("Undo: U  |  Restart: R  |  Esc: Menu  -  ") + state,
                      15, {300.f, 735.f}, ink);
 }
 
@@ -129,3 +129,4 @@ sf::Color Renderer::getTileColor(int value) const {
         default: return sf::Color(96, 91, 84);
     }
 }
+

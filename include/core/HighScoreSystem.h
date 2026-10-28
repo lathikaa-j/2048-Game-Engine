@@ -15,6 +15,7 @@ private:
     const size_t MAX_LEADERBOARD_SIZE = 10;
 
 public:
+    const std::vector<LeaderboardEntry>& getEntries() const { return leaderboard; }
     void registerScore(const std::string& username, int score);
     void printLeaderboard() const;
 };

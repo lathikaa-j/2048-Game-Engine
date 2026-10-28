@@ -3,6 +3,13 @@
 #include <algorithm>
 
 void HighScoreSystem::registerScore(const std::string& username, int score) {
+    // One best score per player prevents duplicate records after reloading a save.
+    auto existing = std::find_if(leaderboard.begin(), leaderboard.end(),
+        [&](const LeaderboardEntry& entry) { return entry.username == username; });
+    if (existing != leaderboard.end()) {
+        score = std::max(score, existing->score);
+        leaderboard.erase(existing);
+    }
     leaderboard.push_back({username, score});
     
     // Sort in descending order based on the score

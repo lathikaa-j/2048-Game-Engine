@@ -2,6 +2,8 @@
 
 #include <iomanip>
 #include <ostream>
+#include <limits>
+#include "exceptions/GameException.h"
 
 Board::Board()
     : grid(BOARD_SIZE, std::vector<Tile>(BOARD_SIZE)),
@@ -39,6 +41,9 @@ std::vector<int> Board::processLine(const std::vector<int>& line) {
     std::vector<int> result;
     for (std::size_t index = 0; index < nonEmpty.size(); ++index) {
         if (index + 1 < nonEmpty.size() && nonEmpty[index] == nonEmpty[index + 1]) {
+            if (nonEmpty[index] > std::numeric_limits<int>::max()/2
+                || nonEmpty[index]*2 > std::numeric_limits<int>::max()-lastMoveScore)
+                throw GameException("Tile or merge score exceeds the supported integer range");
             const int mergedValue = nonEmpty[index] * 2;
             result.push_back(mergedValue);
             lastMoveScore += mergedValue;

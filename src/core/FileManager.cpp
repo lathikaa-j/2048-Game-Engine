@@ -6,8 +6,10 @@ bool FileManager::writeToFile(const std::string& filename, const std::string& co
     std::ofstream file(filename);
     if (file.is_open()) {
         file << content;
+        file.flush();
+        const bool success = file.good();
         file.close();
-        return true;
+        return success && !file.fail();
     }
     return false;
 }

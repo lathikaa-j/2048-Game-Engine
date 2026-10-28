@@ -3,6 +3,8 @@
 #include "core/Board.h"
 #include "core/GameState.h"
 #include "utils/History.h"
+#include "core/GameModes.h"
+#include "core/Score_Manager.h"
 
 enum class Direction { Left, Right, Up, Down };
 
@@ -15,7 +17,8 @@ private:
     };
 
     Board board;
-    int score;
+    ScoreManager score;
+    GameModes modes;
     GameState state;
     History<GameSnapshot> history;
 
@@ -24,7 +27,8 @@ private:
 public:
     Game();
     // Construct a session from a board snapshot (also useful for deterministic scenarios).
-    explicit Game(const Board& initialBoard, int initialScore = 0);
+    explicit Game(const Board& initialBoard, int initialScore = 0, GameModes mode = GameModes{});
+    const GameModes& getModes() const { return modes; }
     void newGame();
     // Blocked moves return false; invalid Direction enum values throw InvalidMoveException.
     bool move(Direction direction);

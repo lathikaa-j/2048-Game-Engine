@@ -1,21 +1,25 @@
 #include "core/Game.h"
 #include "exceptions/InvalidMoveException.h"
+#include <limits>
+#include <algorithm>
 
 Game::Game() { newGame(); }
 
-Game::Game(const Board& initialBoard, int initialScore)
-    : board(initialBoard), score(initialScore), state(GameState::Playing) {
+Game::Game(const Board& initialBoard, int initialScore, GameModes mode)
+    : board(initialBoard), modes(mode), state(GameState::Playing) {
     if (initialScore < 0) { throw GameException("Score cannot be negative"); }
+    score.addMergeScore(initialScore);
     updateState();
 }
 
 void Game::newGame() {
     board.clear();
-    score = 0;
+    score.resetScore();
     state = GameState::Playing;
     history.clear();
     board.addRandomTile();
     board.addRandomTile();
+    updateState();
 }
 
 bool Game::move(Direction direction) {
@@ -42,16 +46,22 @@ bool Game::move(Direction direction) {
         return false;
     }
 
-    history.push(GameSnapshot{board, score, state});
+    if (nextBoard.getLastMoveScore() > std::numeric_limits<int>::max() - getScore())
+        throw GameException("Score exceeds the supported integer range");
+    history.push(GameSnapshot{board, getScore(), state});
     board = nextBoard;
-    score += board.getLastMoveScore();
+    score.addMergeScore(board.getLastMoveScore());
     board.addRandomTile();
     updateState();
     return true;
 }
 
 void Game::updateState() {
-    if (board.hasWon()) {
+    int highest = 0;
+    for (std::size_t r = 0; r < 4; ++r)
+        for (std::size_t c = 0; c < 4; ++c)
+            highest = std::max(highest, board.getTile(r,c).getValue());
+    if (modes.checkWinCondition(highest)) {
         state = GameState::Won;
     } else if (board.isGameOver()) {
         state = GameState::Lost;
@@ -66,7 +76,8 @@ bool Game::undo() {
     }
     const GameSnapshot previous = history.pop();
     board = previous.board;
-    score = previous.score;
+    score.resetScore();
+    score.addMergeScore(previous.score);
     state = previous.state;
     return true;
 }
@@ -84,5 +95,5 @@ void Game::resume() {
 }
 
 const Board& Game::getBoard() const { return board; }
-int Game::getScore() const { return score; }
+int Game::getScore() const { return score.getCurrentScore(); }
 GameState Game::getState() const { return state; }

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 struct PlayerProfile {
     std::string username;
@@ -14,6 +15,7 @@ private:
     std::string activePlayer;
 
 public:
+    std::vector<std::string> getPlayers() const;
     bool createProfile(const std::string& username);
     bool selectPlayer(const std::string& username);
     std::string getActivePlayer() const;

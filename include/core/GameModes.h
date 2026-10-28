@@ -13,6 +13,7 @@ private:
     int targetTile = 2048; // Default win condition for Standard mode
 
 public:
+    int getTargetTile() const { return targetTile; }
     void setMode(Mode mode, int customTarget = 2048);
     Mode getCurrentMode() const;
     bool checkWinCondition(int highestTileOnBoard) const;
