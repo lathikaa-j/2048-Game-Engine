@@ -1,5 +1,5 @@
-#include "../../include/Core/SaveGame.h"
-#include "../../include/Core/FileManager.h"
+#include "../../include/core/SaveGame.h"
+#include "../../include/core/FileManager.h"
 
 bool SaveGame::saveState(const std::string& username, int score, const std::string& boardData) {
     // Creates a unique save file for the specific player

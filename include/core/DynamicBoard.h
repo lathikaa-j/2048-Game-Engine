@@ -1,34 +1,35 @@
+
 #ifndef DYNAMIC_BOARD_H
 #define DYNAMIC_BOARD_H
 
 #include <vector>
-#include "Tile.h"
+#include <random>
 
 class DynamicBoard {
 private:
-    // Using a 2D vector allows for runtime resizing
-    std::vector<std::vector<Tile*>> grid;
-    int currentSize;
-    int nextExpansionTarget;
-
-    // Encapsulated helper function for the expansion logic
-    void expandBoard();
+    int boardSize;
+    std::vector<std::vector<int>> grid;
+    std::mt19937 rng;
 
 public:
-    // Constructor defaults to a 3x3 grid
-    DynamicBoard(int initialSize = 3);
-    
-    // Destructor to clean up raw pointers
-    ~DynamicBoard();
+    explicit DynamicBoard(int size = 4);
 
     int getSize() const;
-    void spawnRandomTile();
-    
-    // Call this after every successful move to verify if the board should grow
-    void checkAndExpand();
+    int getTile(int row, int col) const;
+    void setTile(int row, int col, int value);
 
-    // Example move function signature (others omitted for brevity)
-    void moveLeft();
+    void spawnRandomTile();
+    bool moveLeft();
+    bool moveRight();
+    bool moveUp();
+    bool moveDown();
+
+    bool isFull() const;
+    void reset();
+
+private:
+    bool moveLeftInRow(std::vector<int>& row);
+    void validatePosition(int row, int col) const;
 };
 
-#endif // DYNAMIC_BOARD_H
+#endif

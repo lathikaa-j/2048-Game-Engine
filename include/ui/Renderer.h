@@ -14,9 +14,12 @@ private:
     sf::Font font;
     Button newGameButton{{365.f, 111.f, 185.f, 48.f}, "New Game"};
     Button overlayButton{{200.f, 495.f, 200.f, 50.f}, "New Game"};
+    Button size3Button{{50.f, 172.f, 88.f, 36.f}, "3x3"};
+    Button size4Button{{148.f, 172.f, 88.f, 36.f}, "4x4"};
+    Button size5Button{{246.f, 172.f, 88.f, 36.f}, "5x5"};
     void drawOverlay(sf::RenderWindow& window, const Game& game) const;
     static constexpr float BOARD_SIZE = 500.f;
-    static constexpr float BOARD_TOP = 195.f;
+    static constexpr float BOARD_TOP = 218.f;
     static constexpr float CELL_GAP = 12.f;
     static constexpr float TITLE_Y = 65.f;
     void drawBoard(sf::RenderWindow& window, const Board& board) const;
@@ -32,5 +35,7 @@ public:
     explicit Renderer(const std::string& fontPath);
     void render(sf::RenderWindow& window, const Game& game) const;
     bool restartClicked(const sf::Event& event, sf::Vector2f point, const Game& game) const;
+    std::size_t boardSizeClicked(const sf::Event& event, sf::Vector2f point,
+                                 const Game& game) const;
     static sf::Color backgroundColor();
 };

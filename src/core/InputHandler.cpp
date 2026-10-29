@@ -1,4 +1,4 @@
-#include "../../include/Core/InputHandler.h"
+#include "../../include/core/InputHandler.h"
 #include <iostream>
 
 Command InputHandler::getGameInput() const {

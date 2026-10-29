@@ -13,6 +13,7 @@ InputHandler::Result InputHandler::handleEvent(const sf::Event& event, Game& gam
         case sf::Keyboard::Left: case sf::Keyboard::A: game.move(Direction::Left); break;
         case sf::Keyboard::Right: case sf::Keyboard::D: game.move(Direction::Right); break;
         default: return Result::Ignored;
+        case sf::Keyboard::Escape: return Result::CloseRequested;
     }
     return Result::Handled;
 }

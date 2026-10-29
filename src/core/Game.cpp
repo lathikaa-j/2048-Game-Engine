@@ -1,8 +1,15 @@
 #include "core/Game.h"
+#include "exceptions/GameException.h"
 #include "exceptions/InvalidMoveException.h"
 
-Game::Game() { newGame(); }
 
+
+Game::Game() : Game(Board::BOARD_SIZE) {}
+
+Game::Game(std::size_t boardSize)
+    : board(boardSize), score(0), state(GameState::Playing) {
+    newGame();
+}
 Game::Game(const Board& initialBoard, int initialScore)
     : board(initialBoard), score(initialScore), state(GameState::Playing) {
     if (initialScore < 0) { throw GameException("Score cannot be negative"); }
@@ -10,7 +17,18 @@ Game::Game(const Board& initialBoard, int initialScore)
 }
 
 void Game::newGame() {
-    board.clear();
+    newGame(board.getSize());
+}
+
+void Game::newGame(std::size_t boardSize) {
+    if (!Board::isAllowedSize(boardSize)) {
+        throw GameException("Board size must be 3, 4, or 5");
+    }
+    if (board.getSize() != boardSize) {
+        board = Board(boardSize);
+    } else {
+        board.clear();
+    }
     score = 0;
     state = GameState::Playing;
     history.clear();

@@ -1,4 +1,4 @@
-#include "../../include/Core/Statistics.h"
+#include "../../include/core/Statistics.h"
 #include <algorithm>
 
 void Statistics::incrementMoves() {

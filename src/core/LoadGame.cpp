@@ -1,5 +1,5 @@
-#include "../../include/Core/LoadGame.h"
-#include "../../include/Core/FileManager.h"
+#include "../../include/core/LoadGame.h"
+#include "../../include/core/FileManager.h"
 #include <sstream>
 
 bool LoadGame::loadState(const std::string& username, int& outScore, std::string& outBoardData) {

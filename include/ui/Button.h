@@ -10,12 +10,13 @@ class Button {
 public:
     Button(sf::FloatRect area, std::string text) : bounds(area), label(std::move(text)) {}
     bool contains(sf::Vector2f point) const { return bounds.contains(point); }
-    void draw(sf::RenderWindow& window, const sf::Font& font) const {
+    void draw(sf::RenderWindow& window, const sf::Font& font, bool selected = false) const {
         const auto mouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
         sf::RectangleShape shape({bounds.width, bounds.height});
         shape.setPosition(bounds.left, bounds.top);
+        const sf::Color idle = selected ? sf::Color(110, 96, 81) : sf::Color(139, 122, 102);
         shape.setFillColor(window.hasFocus() && contains(mouse)
-            ? sf::Color(110, 96, 81) : sf::Color(139, 122, 102));
+            ? sf::Color(90, 78, 64) : idle);
         window.draw(shape);
         sf::Text text(label, font, 20);
         const auto local = text.getLocalBounds();

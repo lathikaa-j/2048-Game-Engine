@@ -1,4 +1,4 @@
-#include "core/ThemeManager.h"
+#include "core/themeManager.h"
 
 ThemeManager::ThemeManager() {
     loadDefaultThemes();

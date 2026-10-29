@@ -1,4 +1,4 @@
-#include "../../include/Core/HighScoreSystem.h"
+#include "../../include/core/HighScoreSystem.h"
 #include <iostream>
 #include <algorithm>
 
