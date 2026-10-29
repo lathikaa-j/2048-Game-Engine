@@ -1,4 +1,4 @@
-#include "../../include/Core/BoardRenderer.h"
+#include "../../include/core/BoardRenderer.h"
 #include <iostream>
 #include <iomanip>
 

@@ -385,6 +385,20 @@ void checkNewPhases(int& testsPassed, int& testsFailed) {
     recordCheck("New game resets board, score, state and history", initialTilesValid(game)
                 && game.getScore() == 0 && game.getState() == GameState::Playing
                 && !game.undo(), testsPassed, testsFailed);
+
+    Board smallBoard(3);
+    smallBoard.setTile(1, 1, 2);
+    smallBoard.setTile(1, 2, 2);
+    GameModes smallTarget;
+    smallTarget.setMode(Mode::TARGET, 4);
+    Game smallGame(smallBoard, 0, smallTarget);
+    const bool smallGameMoved = smallGame.move(Direction::Left);
+    Game largeGame(5);
+    recordCheck("Dynamic 3x3 and 5x5 games retain dimensions and evaluate mode wins",
+                smallGameMoved && smallGame.getBoard().getSize() == 3
+                    && smallGame.getScore() == 4 && smallGame.getState() == GameState::Won
+                    && largeGame.getBoard().getSize() == 5,
+                testsPassed, testsFailed);
 }
 
 void checkExceptions(int& passed, int& failed) {

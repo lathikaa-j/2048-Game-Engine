@@ -1,5 +1,5 @@
 #pragma once
-
+#include<cstddef>
 #include "core/Board.h"
 #include "core/GameState.h"
 #include "utils/History.h"
@@ -29,7 +29,9 @@ public:
     // Construct a session from a board snapshot (also useful for deterministic scenarios).
     explicit Game(const Board& initialBoard, int initialScore = 0, GameModes mode = GameModes{});
     const GameModes& getModes() const { return modes; }
+    explicit Game(std::size_t boardSize);
     void newGame();
+    void newGame(std::size_t boardSize);
     // Blocked moves return false; invalid Direction enum values throw InvalidMoveException.
     bool move(Direction direction);
     bool undo();

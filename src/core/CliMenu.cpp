@@ -1,4 +1,4 @@
-#include "../../include/Core/CliMenu.h"
+#include "../../include/core/CliMenu.h"
 #include <iostream>
 
 void CLIMenu::displayMainMenu() const {

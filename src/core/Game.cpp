@@ -1,19 +1,38 @@
 #include "core/Game.h"
+#include "exceptions/GameException.h"
 #include "exceptions/InvalidMoveException.h"
 #include <limits>
 #include <algorithm>
 
-Game::Game() { newGame(); }
+
+Game::Game() : Game(Board::BOARD_SIZE) {}
 
 Game::Game(const Board& initialBoard, int initialScore, GameModes mode)
     : board(initialBoard), modes(mode), state(GameState::Playing) {
+    score.resetScore();
     if (initialScore < 0) { throw GameException("Score cannot be negative"); }
     score.addMergeScore(initialScore);
     updateState();
 }
 
+Game::Game(std::size_t boardSize)
+    : board(boardSize), state(GameState::Playing) {
+    newGame();
+}
+
 void Game::newGame() {
-    board.clear();
+    newGame(board.getSize());
+}
+
+void Game::newGame(std::size_t boardSize) {
+    if (!Board::isAllowedSize(boardSize)) {
+        throw GameException("Board size must be 3, 4, or 5");
+    }
+    if (board.getSize() != boardSize) {
+        board = Board(boardSize);
+    } else {
+        board.clear();
+    }
     score.resetScore();
     state = GameState::Playing;
     history.clear();
@@ -58,8 +77,8 @@ bool Game::move(Direction direction) {
 
 void Game::updateState() {
     int highest = 0;
-    for (std::size_t r = 0; r < 4; ++r)
-        for (std::size_t c = 0; c < 4; ++c)
+    for (std::size_t r = 0; r < board.getSize(); ++r)
+        for (std::size_t c = 0; c < board.getSize(); ++c)
             highest = std::max(highest, board.getTile(r,c).getValue());
     if (modes.checkWinCondition(highest)) {
         state = GameState::Won;

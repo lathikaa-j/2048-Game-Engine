@@ -6,7 +6,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(engine2048 src/core/Tile.cpp src/core/Board.cpp src/core/Game.cpp
     src/core/GameModes.cpp src/core/ScoreManager.cpp src/core/PlayerSystem.cpp
     src/core/HighScore.cpp src/core/Statistics.cpp src/core/SaveGame.cpp
-    src/core/LoadGame.cpp src/core/FileManager.cpp src/core/Session.cpp)
+    src/core/LoadGame.cpp src/core/FileManager.cpp src/core/Session.cpp
+    src/core/DynamicBoard.cpp src/core/themeManager.cpp)
 target_include_directories(engine2048 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 include(CTest)
 if(BUILD_TESTING)

@@ -1,16 +1,26 @@
 #include "core/Board.h"
-
+#include<stdexcept>
 #include <iomanip>
 #include <ostream>
 #include <limits>
 #include "exceptions/GameException.h"
 
-Board::Board()
-    : grid(BOARD_SIZE, std::vector<Tile>(BOARD_SIZE)),
-      randomGenerator(std::random_device{}()), lastMoveScore(0) {}
+bool Board::isAllowedSize(std::size_t size) {
+    return size >= MIN_BOARD_SIZE && size <= MAX_BOARD_SIZE;
+}
+
+Board::Board(std::size_t size)
+    : boardSize(size),
+      grid(size, std::vector<Tile>(size)),
+      randomGenerator(std::random_device{}()),
+      lastMoveScore(0) {
+    if (!isAllowedSize(size)) {
+        throw std::invalid_argument("Board size must be 3, 4, or 5");
+    }
+}
 
 std::size_t Board::getSize() const {
-    return BOARD_SIZE;
+    return boardSize;
 }
 
 Tile Board::getTile(std::size_t row, std::size_t col) const {
@@ -52,18 +62,18 @@ std::vector<int> Board::processLine(const std::vector<int>& line) {
             result.push_back(nonEmpty[index]);
         }
     }
-    result.resize(BOARD_SIZE, 0);
+    result.resize(boardSize, 0);
     return result;
 }
 
 bool Board::moveLines(bool horizontal, bool reversed) {
     lastMoveScore = 0;
     bool changed = false;
-    for (std::size_t lineIndex = 0; lineIndex < BOARD_SIZE; ++lineIndex) {
+    for (std::size_t lineIndex = 0; lineIndex < boardSize; ++lineIndex) {
         std::vector<int> line;
-        for (std::size_t offset = 0; offset < BOARD_SIZE; ++offset) {
+        for (std::size_t offset = 0; offset < boardSize; ++offset) {
             // Read starting at the destination edge of the move.
-            const std::size_t position = reversed ? BOARD_SIZE - 1 - offset : offset;
+            const std::size_t position = reversed ? boardSize - 1 - offset : offset;
             const std::size_t row = horizontal ? lineIndex : position;
             const std::size_t col = horizontal ? position : lineIndex;
             line.push_back(grid[row][col].getValue());
@@ -72,8 +82,8 @@ bool Board::moveLines(bool horizontal, bool reversed) {
         const std::vector<int> result = processLine(line);
         if (result != line) {
             changed = true;
-            for (std::size_t offset = 0; offset < BOARD_SIZE; ++offset) {
-                const std::size_t position = reversed ? BOARD_SIZE - 1 - offset : offset;
+            for (std::size_t offset = 0; offset < boardSize; ++offset) {
+                const std::size_t position = reversed ? boardSize - 1 - offset : offset;
                 const std::size_t row = horizontal ? lineIndex : position;
                 const std::size_t col = horizontal ? position : lineIndex;
                 grid[row][col].setValue(result[offset]);
@@ -102,10 +112,10 @@ bool Board::moveDown() {
 bool Board::addRandomTile() {
     // Store flattened positions; the grid remains private.
     std::vector<std::size_t> emptyPositions;
-    for (std::size_t row = 0; row < BOARD_SIZE; ++row) {
-        for (std::size_t col = 0; col < BOARD_SIZE; ++col) {
+    for (std::size_t row = 0; row < boardSize; ++row) {
+        for (std::size_t col = 0; col < boardSize; ++col) {
             if (grid[row][col].isEmpty()) {
-                emptyPositions.push_back(row * BOARD_SIZE + col);
+                emptyPositions.push_back(row * boardSize + col);
             }
         }
     }
@@ -117,7 +127,7 @@ bool Board::addRandomTile() {
     std::uniform_int_distribution<int> valueDistribution(1, 10);
     const std::size_t position = emptyPositions[positionDistribution(randomGenerator)];
     const int value = valueDistribution(randomGenerator) <= 9 ? 2 : 4;
-    grid[position / BOARD_SIZE][position % BOARD_SIZE].setValue(value);
+    grid[position / boardSize][position % boardSize].setValue(value);
     return true;
 }
 
@@ -137,12 +147,12 @@ bool Board::hasWon() const {
 }
 
 bool Board::canMove() const {
-    for (std::size_t row = 0; row < BOARD_SIZE; ++row) {
-        for (std::size_t col = 0; col < BOARD_SIZE; ++col) {
+    for (std::size_t row = 0; row < boardSize; ++row) {
+        for (std::size_t col = 0; col < boardSize; ++col) {
             const int value = grid[row][col].getValue();
             if (grid[row][col].isEmpty()
-                || (col + 1 < BOARD_SIZE && value == grid[row][col + 1].getValue())
-                || (row + 1 < BOARD_SIZE && value == grid[row + 1][col].getValue())) {
+                || (col + 1 < boardSize && value == grid[row][col + 1].getValue())
+                || (row + 1 < boardSize && value == grid[row + 1][col].getValue())) {
                 return true;
             }
         }
@@ -155,8 +165,11 @@ bool Board::isGameOver() const {
 }
 
 bool Board::operator==(const Board& other) const {
-    for (std::size_t row = 0; row < BOARD_SIZE; ++row) {
-        for (std::size_t col = 0; col < BOARD_SIZE; ++col) {
+    if (boardSize != other.boardSize) {
+        return false;
+    }
+    for (std::size_t row = 0; row < boardSize; ++row) {
+        for (std::size_t col = 0; col < boardSize; ++col) {
             if (grid[row][col].getValue() != other.grid[row][col].getValue()) {
                 return false;
             }
@@ -170,8 +183,8 @@ bool Board::operator!=(const Board& other) const {
 }
 
 std::ostream& operator<<(std::ostream& os, const Board& board) {
-    for (std::size_t row = 0; row < Board::BOARD_SIZE; ++row) {
-        for (std::size_t col = 0; col < Board::BOARD_SIZE; ++col) {
+    for (std::size_t row = 0; row < board.boardSize; ++row) {
+        for (std::size_t col = 0; col < board.boardSize; ++col) {
             os << std::setw(6) << board.grid[row][col].getValue();
         }
         os << '\n';

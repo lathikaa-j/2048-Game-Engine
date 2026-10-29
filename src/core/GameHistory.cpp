@@ -1,22 +1,13 @@
-#ifndef GAME_HISTORY_H
-#define GAME_HISTORY_H
+#include "../../include/core/GameHistory.h"
 
-#include <vector>
+void GameHistory::addGameRecord(int finalScore, int highestTile, int totalMoves) {
+    history.push_back({finalScore, highestTile, totalMoves});
+}
 
-struct PastGame {
-    int finalScore;
-    int highestTile;
-    int totalMoves;
-};
+std::vector<PastGame> GameHistory::getHistory() const {
+    return history;
+}
 
-class GameHistory {
-private:
-    std::vector<PastGame> history;
-
-public:
-    void addGameRecord(int finalScore, int highestTile, int totalMoves);
-    std::vector<PastGame> getHistory() const;
-    void clearHistory();
-};
-
-#endif
+void GameHistory::clearHistory() {
+    history.clear();
+}

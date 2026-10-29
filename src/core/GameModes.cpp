@@ -1,4 +1,4 @@
-#include "../../include/Core/GameModes.h"
+#include "core/GameModes.h"
 #include <stdexcept>
 
 void GameModes::setMode(Mode mode, int customTarget) {
