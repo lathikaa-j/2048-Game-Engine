@@ -20,6 +20,7 @@ private:
     ScoreManager score;
     GameModes modes;
     GameState state;
+    std::size_t obstacleCount = 0;
     History<GameSnapshot> history;
 
     void updateState();
@@ -29,9 +30,9 @@ public:
     // Construct a session from a board snapshot (also useful for deterministic scenarios).
     explicit Game(const Board& initialBoard, int initialScore = 0, GameModes mode = GameModes{});
     const GameModes& getModes() const { return modes; }
-    explicit Game(std::size_t boardSize);
+    explicit Game(std::size_t boardSize, GameModes mode = GameModes{}, std::size_t obstacles = 0);
     void newGame();
-    void newGame(std::size_t boardSize);
+    void newGame(std::size_t boardSize, std::size_t obstacles = 0);
     // Blocked moves return false; invalid Direction enum values throw InvalidMoveException.
     bool move(Direction direction);
     bool undo();

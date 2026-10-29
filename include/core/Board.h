@@ -38,6 +38,8 @@ public:
     bool moveDown();
 
     bool addRandomTile();
+    bool addRandomObstacle();
+    std::size_t getObstacleCount() const;
     int getLastMoveScore() const;
     bool hasWon() const;
     bool canMove() const;

@@ -1,6 +1,8 @@
 #include "ui/Application.h"
 #include "exceptions/GameException.h"
 #include <algorithm>
+#include <charconv>
+#include <system_error>
 
 namespace {
 std::string modeName(const GameModes& mode) {
@@ -25,6 +27,7 @@ void MenuScreen::click(sf::Vector2f point) {
 }
 Application::Application(const std::string& path) : renderer(path) {
     if (!font.loadFromFile(path)) throw GameException("Cannot load menu font: " + path);
+    renderer.setTheme(themeManager.getCurrentTheme());
     rebuildMenu();
 }
 void Application::navigate(Screen next) {
@@ -39,6 +42,25 @@ void Application::createProfile() {
         name.clear(); rebuildMenu();
     }
 }
+void Application::confirmTarget() {
+    int target = 0;
+    const char* begin = targetInput.data();
+    const char* end = begin + targetInput.size();
+    const auto parsed = std::from_chars(begin, end, target);
+    if (targetInput.empty() || parsed.ec != std::errc{} || parsed.ptr != end) {
+        message = "Enter a whole-number power of 2 from 2 to 1048576.";
+        return;
+    }
+    try {
+        session.selectMode(Mode::TARGET, target);
+    } catch (const std::invalid_argument&) {
+        message = "Enter a whole-number power of 2 from 2 to 1048576.";
+        return;
+    }
+    targetInput.clear();
+    navigate(Screen::Modes);
+    message = "Target " + std::to_string(target) + " selected for new games.";
+}
 void Application::rebuildMenu() {
     menu.clear();
     auto back = [this] { navigate(Screen::Main); };
@@ -48,9 +70,17 @@ void Application::rebuildMenu() {
             menu.add("Play New Game", [this] { session.start(); navigate(Screen::Gameplay); });
             menu.add("Player Profiles", [this] { navigate(Screen::Profiles); });
             menu.add("Game Modes", [this] { navigate(Screen::Modes); });
+            menu.add("Board Size", [this] { navigate(Screen::BoardSizes); });
+            menu.add("Themes", [this] { navigate(Screen::Themes); });
             menu.add("Load Game", [this] { navigate(Screen::Load); });
             menu.add("Leaderboard", [this] { navigate(Screen::Leaderboard); });
             menu.add("Statistics", [this] { navigate(Screen::Statistics); });
+            menu.add(std::string("Obstacles: ") + (session.getObstaclesEnabled() ? "On" : "Off"), [this] {
+                session.setObstaclesEnabled(!session.getObstaclesEnabled());
+                message = std::string("Obstacles ") + (session.getObstaclesEnabled()
+                    ? "enabled for new games." : "disabled for new games.");
+                rebuildMenu();
+            });
             menu.add("Exit", [this] { exitRequested = true; }); break;
         case Screen::Profiles: {
             menu.add("Create & Select (Enter)", [this] { createProfile(); });
@@ -70,7 +100,29 @@ void Application::rebuildMenu() {
         case Screen::Modes:
             menu.add("Standard - reach 2048", [this] { session.selectMode(Mode::STANDARD); message = "Standard selected for new games."; });
             menu.add("Endless - play until no moves remain", [this] { session.selectMode(Mode::ENDLESS); message = "Endless selected for new games."; });
-            menu.add("Target - reach 512", [this] { session.selectMode(Mode::TARGET,512); message = "Target 512 selected for new games."; });
+            menu.add("Target Mode - choose a tile", [this] { targetInput.clear(); navigate(Screen::SelectTarget); });
+            menu.add("Back", back); break;
+        case Screen::SelectTarget:
+            break;
+        case Screen::BoardSizes:
+            for (std::size_t size = Board::MIN_BOARD_SIZE; size <= Board::MAX_BOARD_SIZE; ++size) {
+                menu.add(std::to_string(size) + "x" + std::to_string(size)
+                    + (size == session.getSelectedBoardSize() ? " [selected]" : ""), [this, size] {
+                    session.selectBoardSize(size);
+                    message = "New games will use " + std::to_string(size) + "x" + std::to_string(size) + ".";
+                    rebuildMenu();
+                });
+            }
+            menu.add("Back", back); break;
+        case Screen::Themes:
+            for (const auto& name : themeManager.getAvailableThemes()) {
+                menu.add(name + (name == themeName() ? " [selected]" : ""), [this, name] {
+                    themeManager.setTheme(name);
+                    renderer.setTheme(themeManager.getCurrentTheme());
+                    message = name + " theme selected.";
+                    rebuildMenu();
+                });
+            }
             menu.add("Back", back); break;
         case Screen::Load:
             menu.add("Load selected player's save", [this] {
@@ -84,31 +136,56 @@ void Application::rebuildMenu() {
     }
 }
 void Application::text(sf::RenderWindow& window, const std::string& value, float y, unsigned size) const {
-    sf::Text label(value,font,size); label.setFillColor(sf::Color(90,82,73));
+    sf::Text label(value,font,size); label.setFillColor(renderer.getTextColor());
     const auto bounds = label.getLocalBounds();
     label.setPosition(300.f - (bounds.left+bounds.width/2),y); window.draw(label);
 }
 void Application::draw(sf::RenderWindow& window) {
     if (screen == Screen::Gameplay) {
         renderer.render(window,session.getGame()); menuButton.draw(window,font); saveButton.draw(window,font);
-        text(window,message.empty() ? session.sessionPlayer()+" | "+modeName(session.getGame().getModes()) : message,172,15);
+        text(window,message.empty() ? session.sessionPlayer()+" | "+modeName(session.getGame().getModes())
+            +" | "+std::to_string(session.getGame().getBoard().getSize())+"x"
+            +std::to_string(session.getGame().getBoard().getSize())+" | "+themeName() : message,172,15);
         return;
     }
     const char* title = "2048";
     switch (screen) {
         case Screen::Profiles: title="Player Profiles"; break;
         case Screen::Modes: title="Game Modes"; break;
+        case Screen::SelectTarget: title="Select Target"; break;
+        case Screen::BoardSizes: title="Board Size"; break;
+        case Screen::Themes: title="Themes"; break;
         case Screen::Load: title="Load Game"; break;
         case Screen::Leaderboard: title="Leaderboard"; break;
         case Screen::Statistics: title="Statistics"; break;
         default: break;
     }
     text(window,title,45,40);
-    text(window,"Player: "+session.activePlayer()+" | "+modeName(session.getSelectedMode()),105,18);
+    text(window,"Player: "+session.activePlayer()+" | "+modeName(session.getSelectedMode())
+        +" | Board: "+std::to_string(session.getSelectedBoardSize())+"x"
+        +std::to_string(session.getSelectedBoardSize())+" | Theme: "+themeName(),105,16);
     menu.draw(window,font);
-    if (screen == Screen::Profiles) {
+    if (screen == Screen::SelectTarget) {
+        text(window,"Enter your target tile (power of 2)",170,21);
+        sf::RectangleShape inputBox({500.f,48.f});
+        inputBox.setPosition(50.f,220.f);
+        const RGBColor fill = themeManager.getCurrentTheme().emptyTileColor;
+        const RGBColor outline = themeManager.getCurrentTheme().gridColor;
+        inputBox.setFillColor(sf::Color(fill.r,fill.g,fill.b));
+        inputBox.setOutlineThickness(2.f);
+        inputBox.setOutlineColor(sf::Color(outline.r,outline.g,outline.b));
+        window.draw(inputBox);
+        sf::Text value(targetInput + "|",font,22);
+        value.setFillColor(renderer.getTextColor());
+        value.setPosition(68.f,229.f);
+        window.draw(value);
+        text(window,message,292,17);
+        confirmTargetButton.draw(window,font);
+        backTargetButton.draw(window,font);
+    } else if (screen == Screen::Profiles) {
         sf::RectangleShape field({500,32}); field.setPosition(50,133);
-        field.setFillColor(sf::Color(237,228,216)); window.draw(field);
+        const RGBColor fill = themeManager.getCurrentTheme().emptyTileColor;
+        field.setFillColor(sf::Color(fill.r, fill.g, fill.b)); window.draw(field);
         text(window,"Name: "+name+"_",135,19);
         text(window,"Profiles last for this application session.",610,17);
     } else if (screen == Screen::Load) {
@@ -129,15 +206,34 @@ void Application::draw(sf::RenderWindow& window) {
         text(window,"Successful moves: "+std::to_string(stats.getMoves()),360);
         text(window,"Best tile observed: "+std::to_string(stats.getBestTile()),410);
         text(window,"Undo does not subtract moves or best tile.",470,17);
+    } else if (screen == Screen::BoardSizes) {
+        text(window,"Applies to new games. Current games keep their size.",390,17);
     }
-    text(window,message,650,17); text(window,"Esc: Back / Exit",715,17);
+    if (screen != Screen::SelectTarget) text(window,message,650,17);
+    text(window,"Esc: Back / Exit",715,17);
 }
 void Application::handle(const sf::Event& event, sf::RenderWindow& window, bool focused) {
     if (!focused) return;
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
         if (screen == Screen::Main) exitRequested=true;
+        else if (screen == Screen::SelectTarget) navigate(Screen::Modes);
         else if (screen == Screen::Profiles && !name.empty()) name.clear();
         else navigate(Screen::Main);
+        return;
+    }
+    if (screen == Screen::SelectTarget && event.type == sf::Event::TextEntered) {
+        const auto code = event.text.unicode;
+        if (code == 8) {
+            if (!targetInput.empty()) targetInput.pop_back();
+        } else if (code >= 32 && code < 127) {
+            targetInput.push_back(static_cast<char>(code));
+        }
+        message.clear();
+        return;
+    }
+    if (screen == Screen::SelectTarget && event.type == sf::Event::KeyPressed
+        && event.key.code == sf::Keyboard::Enter) {
+        confirmTarget();
         return;
     }
     if (screen == Screen::Profiles && event.type == sf::Event::TextEntered) {
@@ -154,6 +250,11 @@ void Application::handle(const sf::Event& event, sf::RenderWindow& window, bool 
     const bool click=event.type==sf::Event::MouseButtonPressed && event.mouseButton.button==sf::Mouse::Left;
     sf::Vector2f point;
     if (click) point=window.mapPixelToCoords({event.mouseButton.x,event.mouseButton.y});
+    if (screen == Screen::SelectTarget) {
+        if (click && confirmTargetButton.contains(point)) confirmTarget();
+        else if (click && backTargetButton.contains(point)) navigate(Screen::Modes);
+        return;
+    }
     if (screen!=Screen::Gameplay) { if (click) menu.click(point); return; }
     if (click && menuButton.contains(point)) { navigate(Screen::Main); return; }
     if (click && saveButton.contains(point)) { session.save(message); return; }
@@ -182,7 +283,7 @@ int Application::run() {
             if (exitRequested) break;
         }
         if (exitRequested) break;
-        window.clear(Renderer::backgroundColor()); draw(window); window.display();
+        window.clear(renderer.getBackgroundColor()); draw(window); window.display();
     }
     session.close(); window.close(); return 0;
 }

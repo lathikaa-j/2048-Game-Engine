@@ -15,7 +15,8 @@ bool Tile::isEmpty() const {
 
 bool Tile::canMergeWith(const Tile* other) const {
     // Cannot merge if the other tile is null, or if either tile is empty
-    if (!other || this->isEmpty() || other->isEmpty()) {
+    if (!other || this->isEmpty() || other->isEmpty()
+        || !isMovable() || !other->isMovable()) {
         return false;
     }
     // Standard tiles merge if their values match
@@ -30,7 +31,7 @@ void Tile::mergeWith(Tile* other) {
 }
 
 bool Tile::isMovable() const {
-    return true; // Standard tiles can always slide
+    return value >= 0; // Negative values represent fixed obstacles.
 }
 
 

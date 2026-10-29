@@ -28,6 +28,7 @@ Tile Board::getTile(std::size_t row, std::size_t col) const {
 }
 
 void Board::setTile(std::size_t row, std::size_t col, int value) {
+    if (value < -1) throw std::invalid_argument("Tile value must be nonnegative or an obstacle (-1)");
     grid.at(row).at(col).setValue(value);
 }
 
@@ -41,28 +42,39 @@ void Board::clear() {
 }
 
 std::vector<int> Board::processLine(const std::vector<int>& line) {
-    std::vector<int> nonEmpty;
-    for (int value : line) {
-        if (value != 0) {
-            nonEmpty.push_back(value);
+    std::vector<int> result(boardSize, 0);
+    std::size_t start = 0;
+    while (start < boardSize) {
+        const Tile first(line[start]);
+        if (!first.isMovable()) {
+            result[start] = line[start];
+            ++start;
+            continue;
         }
-    }
+        std::size_t end = start;
+        while (end < boardSize && Tile(line[end]).isMovable()) ++end;
 
-    std::vector<int> result;
-    for (std::size_t index = 0; index < nonEmpty.size(); ++index) {
-        if (index + 1 < nonEmpty.size() && nonEmpty[index] == nonEmpty[index + 1]) {
-            if (nonEmpty[index] > std::numeric_limits<int>::max()/2
-                || nonEmpty[index]*2 > std::numeric_limits<int>::max()-lastMoveScore)
+        std::vector<int> values;
+        for (std::size_t i = start; i < end; ++i)
+            if (line[i] != 0) values.push_back(line[i]);
+        std::size_t output = start;
+        for (std::size_t i = 0; i < values.size(); ++i) {
+            const Tile current(values[i]);
+            const Tile next(i + 1 < values.size() ? values[i + 1] : 0);
+            if (i + 1 < values.size() && current.canMergeWith(&next)) {
+                if (values[i] > std::numeric_limits<int>::max()/2
+                    || values[i]*2 > std::numeric_limits<int>::max()-lastMoveScore)
                 throw GameException("Tile or merge score exceeds the supported integer range");
-            const int mergedValue = nonEmpty[index] * 2;
-            result.push_back(mergedValue);
-            lastMoveScore += mergedValue;
-            ++index; // Consume both original tiles; the result cannot merge again.
-        } else {
-            result.push_back(nonEmpty[index]);
+                const int mergedValue = values[i] * 2;
+                result[output++] = mergedValue;
+                lastMoveScore += mergedValue;
+                ++i; // Consume both original tiles; the result cannot merge again.
+            } else {
+                result[output++] = values[i];
+            }
         }
+        start = end;
     }
-    result.resize(boardSize, 0);
     return result;
 }
 
@@ -131,6 +143,28 @@ bool Board::addRandomTile() {
     return true;
 }
 
+bool Board::addRandomObstacle() {
+    std::vector<std::size_t> emptyPositions;
+    for (std::size_t row = 0; row < boardSize; ++row) {
+        for (std::size_t col = 0; col < boardSize; ++col) {
+            if (grid[row][col].isEmpty()) emptyPositions.push_back(row * boardSize + col);
+        }
+    }
+    if (emptyPositions.empty()) return false;
+    std::uniform_int_distribution<std::size_t> distribution(0, emptyPositions.size() - 1);
+    const std::size_t position = emptyPositions[distribution(randomGenerator)];
+    grid[position / boardSize][position % boardSize].setValue(-1);
+    return true;
+}
+
+std::size_t Board::getObstacleCount() const {
+    std::size_t count = 0;
+    for (const auto& row : grid)
+        for (const Tile& tile : row)
+            if (tile.getValue() == -1) ++count;
+    return count;
+}
+
 int Board::getLastMoveScore() const {
     return lastMoveScore;
 }
@@ -150,9 +184,9 @@ bool Board::canMove() const {
     for (std::size_t row = 0; row < boardSize; ++row) {
         for (std::size_t col = 0; col < boardSize; ++col) {
             const int value = grid[row][col].getValue();
-            if (grid[row][col].isEmpty()
-                || (col + 1 < boardSize && value == grid[row][col + 1].getValue())
-                || (row + 1 < boardSize && value == grid[row + 1][col].getValue())) {
+            if (value == 0
+                || (value > 0 && col + 1 < boardSize && value == grid[row][col + 1].getValue())
+                || (value > 0 && row + 1 < boardSize && value == grid[row + 1][col].getValue())) {
                 return true;
             }
         }

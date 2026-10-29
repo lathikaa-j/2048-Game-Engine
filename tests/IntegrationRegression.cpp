@@ -97,6 +97,20 @@ int main(int argc, char* argv[]) {
     check(leaderboard.getEntries().size()==10 && leaderboard.getEntries().front().score==140 && leaderboard.getEntries().back().score==50,"top ten descending");
     bool rejected=false; try { target.setMode(Mode::TARGET,7); } catch (const std::invalid_argument&) { rejected=true; }
     check(rejected && target.getTargetTile()==512,"invalid mode preserves settings");
+    GameModes standardMode;
+    check(standardMode.getCurrentMode()==Mode::STANDARD && standardMode.getTargetTile()==2048
+        && !standardMode.checkWinCondition(512) && standardMode.checkWinCondition(2048),
+        "Standard mode keeps 2048 as its winning tile");
+    GameModes customTarget; customTarget.setMode(Mode::TARGET,1024);
+    Board targetBoard; targetBoard.setTile(0,0,512); targetBoard.setTile(0,1,512);
+    Game customTargetGame(targetBoard,0,customTarget);
+    check(customTargetGame.move(Direction::Left) && customTargetGame.getState()==GameState::Won
+        && customTargetGame.getModes().getTargetTile()==1024,
+        "Target Mode wins at the selected target value");
+    customTargetGame.newGame();
+    check(customTargetGame.getModes().getCurrentMode()==Mode::TARGET
+        && customTargetGame.getModes().getTargetTile()==1024,
+        "restart retains the selected Target Mode value");
     Game overflow(seed,std::numeric_limits<int>::max());
     rejected=false; try { overflow.move(Direction::Left); } catch (const std::exception&) { rejected=true; }
     check(rejected && overflow.getBoard()==seed && !overflow.undo(),"score overflow preserves progress");
@@ -108,6 +122,77 @@ int main(int argc, char* argv[]) {
     GameModes tinyTarget; tinyTarget.setMode(Mode::TARGET,2);
     Game tiny(seed,0,tinyTarget); tiny.newGame();
     check(tiny.getState()==GameState::Won,"restart evaluates small target immediately");
+
+    session.selectBoardSize(3);
+    session.selectMode(Mode::TARGET, 8);
+    session.start();
+    check(session.getGame().getBoard().getSize()==3
+        && session.getGame().getModes().getCurrentMode()==Mode::TARGET,
+        "selected board size composes with selected mode");
+    Board small(3); small.setTile(0,0,4); small.setTile(2,2,2);
+    session.getGame()=Game(small,12,session.getSelectedMode());
+    check(session.save(message),"save 3x3 game with mode and dimensions");
+    Session smallLoaded;
+    smallLoaded.getPlayers().createProfile("Bob"); smallLoaded.getPlayers().selectPlayer("Bob");
+    check(smallLoaded.load(message) && smallLoaded.getGame().getBoard().getSize()==3
+        && smallLoaded.getGame().getScore()==12
+        && smallLoaded.getSelectedBoardSize()==3
+        && smallLoaded.getGame().getModes().getCurrentMode()==Mode::TARGET
+        && smallLoaded.getGame().getModes().getTargetTile()==8,
+        "load restores dynamic board size, score, mode and custom target");
+    Board obstacleSave(3); obstacleSave.setTile(0,0,-1); obstacleSave.setTile(1,2,-1); obstacleSave.setTile(2,2,2);
+    session.getGame()=Game(obstacleSave,12,session.getSelectedMode());
+    check(session.save(message) && smallLoaded.load(message)
+        && smallLoaded.getGame().getBoard().getTile(0,0).getValue()==-1
+        && smallLoaded.getGame().getBoard().getTile(1,2).getValue()==-1
+        && smallLoaded.getGame().getBoard().getObstacleCount()==2,
+        "save/load preserves obstacle positions");
+    session.selectBoardSize(5); session.start();
+    check(session.getGame().getBoard().getSize()==5,"5x5 selection starts a 5x5 game");
+    bool allSizesMoveUndo = true;
+    bool allSizesLose = true;
+    for (std::size_t size=3; size<=5; ++size) {
+        Board seeded(size);
+        seeded.setTile(0,size-2,2); seeded.setTile(0,size-1,2);
+        GameModes reachFour; reachFour.setMode(Mode::TARGET,4);
+        Game sized(seeded,0,reachFour);
+        const bool moved=sized.move(Direction::Left);
+        int occupied=0;
+        for (std::size_t r=0;r<size;++r) for (std::size_t c=0;c<size;++c)
+            occupied += sized.getBoard().getTile(r,c).getValue()!=0;
+        const bool merged=moved && sized.getScore()==4 && occupied==2
+            && sized.getState()==GameState::Won;
+        const bool undone=sized.undo() && sized.getBoard()==seeded
+            && sized.getScore()==0 && sized.getState()==GameState::Playing;
+        allSizesMoveUndo=allSizesMoveUndo && merged && undone;
+
+        Board dead(size);
+        for (std::size_t r=0;r<size;++r) for (std::size_t c=0;c<size;++c)
+            dead.setTile(r,c,((r+c)%2)==0 ? 2 : 4);
+        GameModes endlessMode; endlessMode.setMode(Mode::ENDLESS);
+        allSizesLose=allSizesLose && Game(dead,0,endlessMode).getState()==GameState::Lost;
+    }
+    check(allSizesMoveUndo,"3x3/4x4/5x5 moves merge, score, spawn and undo");
+    check(allSizesLose,"3x3/4x4/5x5 detect a full immovable board");
+    Board obstacleBoard(4);
+    obstacleBoard.setTile(0,0,2); obstacleBoard.setTile(0,2,-1); obstacleBoard.setTile(0,3,2);
+    const bool obstacleMove=obstacleBoard.moveRight();
+    check(obstacleMove && obstacleBoard.getTile(0,1).getValue()==2
+        && obstacleBoard.getTile(0,2).getValue()==-1
+        && obstacleBoard.getTile(0,3).getValue()==2,
+        "obstacle tiles block movement and merging across their cell");
+    obstacleBoard.clear();
+    obstacleBoard.setTile(0,0,2); obstacleBoard.setTile(0,2,-1);
+    check(obstacleBoard.moveRight() && obstacleBoard.getTile(0,1).getValue()==2
+        && obstacleBoard.getTile(0,2).getValue()==-1,
+        "tiles cannot cross obstacles when moving right");
+    Session obstacleSession;
+    obstacleSession.selectBoardSize(3);
+    obstacleSession.setObstaclesEnabled(true);
+    obstacleSession.start();
+    check(obstacleSession.getGame().getBoard().getObstacleCount()==1
+        && obstacleSession.getGame().getState()==GameState::Playing,
+        "3x3 obstacle game starts with one obstacle and remains playable");
     std::cout << checks << " integration checks, " << failures << " failures\n";
     return failures ? 1:0;
 }

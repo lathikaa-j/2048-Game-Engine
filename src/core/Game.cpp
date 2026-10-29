@@ -8,23 +8,24 @@
 Game::Game() : Game(Board::BOARD_SIZE) {}
 
 Game::Game(const Board& initialBoard, int initialScore, GameModes mode)
-    : board(initialBoard), modes(mode), state(GameState::Playing) {
+    : board(initialBoard), modes(mode), state(GameState::Playing),
+      obstacleCount(initialBoard.getObstacleCount()) {
     score.resetScore();
     if (initialScore < 0) { throw GameException("Score cannot be negative"); }
     score.addMergeScore(initialScore);
     updateState();
 }
 
-Game::Game(std::size_t boardSize)
-    : board(boardSize), state(GameState::Playing) {
-    newGame();
+Game::Game(std::size_t boardSize, GameModes mode, std::size_t obstacles)
+    : board(boardSize), modes(mode), state(GameState::Playing), obstacleCount(obstacles) {
+    newGame(boardSize, obstacles);
 }
 
 void Game::newGame() {
-    newGame(board.getSize());
+    newGame(board.getSize(), obstacleCount);
 }
 
-void Game::newGame(std::size_t boardSize) {
+void Game::newGame(std::size_t boardSize, std::size_t obstacles) {
     if (!Board::isAllowedSize(boardSize)) {
         throw GameException("Board size must be 3, 4, or 5");
     }
@@ -38,6 +39,9 @@ void Game::newGame(std::size_t boardSize) {
     history.clear();
     board.addRandomTile();
     board.addRandomTile();
+    obstacleCount = 0;
+    for (std::size_t i = 0; i < obstacles; ++i)
+        if (board.addRandomObstacle()) ++obstacleCount;
     updateState();
 }
 

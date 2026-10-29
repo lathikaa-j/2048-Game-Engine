@@ -16,23 +16,28 @@ public:
 };
 class Application {
     friend class ApplicationRegression;
-    enum class Screen { Main, Profiles, Modes, Gameplay, Load, Leaderboard, Statistics };
+    enum class Screen { Main, Profiles, Modes, SelectTarget, BoardSizes, Themes, Gameplay, Load, Leaderboard, Statistics };
     sf::Font font;
     Renderer renderer;
     InputHandler input;
     Session session;
+    ThemeManager themeManager;
     MenuScreen menu;
     Screen screen = Screen::Main;
-    std::string name, message;
+    std::string name, message, targetInput;
     std::size_t profilePage = 0;
     bool exitRequested = false;
     Button menuButton{{20, 12, 100, 32}, "Menu"};
     Button saveButton{{470, 12, 110, 32}, "Save"};
+    Button confirmTargetButton{{100, 350, 180, 46}, "Confirm"};
+    Button backTargetButton{{320, 350, 180, 46}, "Back"};
     void navigate(Screen next);
     void rebuildMenu();
     void text(sf::RenderWindow& window, const std::string& value, float y, unsigned size = 20) const;
     void draw(sf::RenderWindow& window);
     void createProfile();
+    void confirmTarget();
+    std::string themeName() const { return themeManager.getCurrentTheme().name; }
     void handle(const sf::Event& event, sf::RenderWindow& window, bool focused);
 public:
     explicit Application(const std::string& fontPath);

@@ -3,6 +3,7 @@
 #include "core/LoadGame.h"
 #include <sstream>
 #include <algorithm>
+#include <stdexcept>
 
 std::string Session::activePlayer() const {
     auto name = players.getActivePlayer();
@@ -10,10 +11,14 @@ std::string Session::activePlayer() const {
 }
 int Session::highestTile(const Board& board) {
     int best = 0;
-    for (std::size_t r = 0; r < 4; ++r)
-        for (std::size_t c = 0; c < 4; ++c)
+    for (std::size_t r = 0; r < board.getSize(); ++r)
+        for (std::size_t c = 0; c < board.getSize(); ++c)
             best = std::max(best, board.getTile(r,c).getValue());
     return best;
+}
+void Session::selectBoardSize(std::size_t size) {
+    if (!Board::isAllowedSize(size)) throw std::invalid_argument("Board size must be 3, 4, or 5");
+    selectedBoardSize = size;
 }
 void Session::finish() {
     if (started) scores.registerScore(owner, game.getScore());
@@ -22,12 +27,12 @@ void Session::finish() {
 void Session::start() {
     finish();
     owner = activePlayer();
-    Board initial;
-    initial.addRandomTile(); initial.addRandomTile();
-    game = Game(initial, 0, selectedMode);
+    const std::size_t obstacles = obstaclesEnabled
+        ? (selectedBoardSize == 3 ? 1 : selectedBoardSize == 4 ? 2 : 3) : 0;
+    game = Game(selectedBoardSize, selectedMode, obstacles);
     started = true;
     statistics[owner].incrementGamesPlayed();
-    statistics[owner].updateBestTile(highestTile(initial));
+    statistics[owner].updateBestTile(highestTile(game.getBoard()));
 }
 void Session::restart() {
     // Restart the current player's current mode, even if menu selections changed.
@@ -51,7 +56,8 @@ bool Session::save(std::string& message) const {
     data << game.getBoard();
     // Optional trailer in the existing opaque board-data field. Legacy grids still load.
     data << "MODE " << static_cast<int>(game.getModes().getCurrentMode())
-         << ' ' << game.getModes().getTargetTile() << '\n';
+         << ' ' << game.getModes().getTargetTile()
+         << " SIZE " << game.getBoard().getSize() << '\n';
     SaveGame writer;
     const bool ok = writer.saveState(owner, game.getScore(), data.str());
     message = ok ? "Saved " + owner + "_save.txt" : "Save failed. Check file permissions.";
@@ -66,32 +72,48 @@ bool Session::load(std::string& message) {
     }
     try {
         std::istringstream input(data);
-        Board board;
-        for (std::size_t r = 0; r < 4; ++r) {
-            for (std::size_t c = 0; c < 4; ++c) {
+        std::vector<int> values;
+        std::size_t savedSize = 0;
+        GameModes mode;
+        std::string token;
+        while (input >> token) {
+            if (token == "MODE") {
+                int modeValue, target;
+                if (!(input >> modeValue >> target)) throw std::invalid_argument("Invalid mode metadata");
+                mode.setMode(static_cast<Mode>(modeValue), target);
+            } else if (token == "SIZE") {
+                int size;
+                if (!(input >> size) || size < 0) throw std::invalid_argument("Invalid board size metadata");
+                savedSize = static_cast<std::size_t>(size);
+            } else {
+                std::size_t used = 0;
                 int value;
-                if (!(input >> value) || value < 0
-                    || (value != 0 && (value < 2 || (value & (value - 1)))))
+                try { value = std::stoi(token, &used); }
+                catch (...) { throw std::invalid_argument("Invalid grid"); }
+                if (used != token.size() || value < -1
+                    || (value != 0 && value != -1 && (value < 2 || (value & (value - 1)))))
                     throw std::invalid_argument("Invalid grid");
-                board.setTile(r,c,value);
+                values.push_back(value);
             }
         }
-        if (!highestTile(board)) throw std::invalid_argument("Empty grid");
-        GameModes mode;
-        input >> std::ws;
-        if (!input.eof()) {
-            std::string tag; int modeValue, target;
-            if (!(input >> tag >> modeValue >> target) || tag != "MODE")
-                throw std::invalid_argument("Invalid metadata");
-            mode.setMode(static_cast<Mode>(modeValue), target);
-            input >> std::ws;
-            if (!input.eof()) throw std::invalid_argument("Unexpected data");
+        if (savedSize == 0) {
+            for (std::size_t candidate = Board::MIN_BOARD_SIZE; candidate <= Board::MAX_BOARD_SIZE; ++candidate)
+                if (values.size() == candidate * candidate) savedSize = candidate;
         }
+        if (!Board::isAllowedSize(savedSize) || values.size() != savedSize * savedSize)
+            throw std::invalid_argument("Invalid grid dimensions");
+        Board board(savedSize);
+        for (std::size_t i = 0; i < values.size(); ++i) {
+            board.setTile(i / savedSize, i % savedSize, values[i]);
+        }
+        if (!highestTile(board)) throw std::invalid_argument("Empty grid");
         Game restored(board, score, mode); // Validate completely before replacing progress.
         finish();
         game = restored;
         owner = activePlayer();
         selectedMode = mode;
+        selectedBoardSize = savedSize;
+        obstaclesEnabled = board.getObstacleCount() != 0;
         started = true;
         statistics[owner].updateBestTile(highestTile(board));
         message = "Loaded " + owner + "_save.txt";

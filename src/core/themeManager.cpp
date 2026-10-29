@@ -30,18 +30,6 @@ void ThemeManager::loadDefaultThemes() {
     darkTheme.tileColors[2048] = {200, 150, 30};
     themes["Dark"] = darkTheme;
 
-    Theme neonTheme;
-    neonTheme.name = "Neon";
-    neonTheme.backgroundColor = {10, 10, 25};
-    neonTheme.gridColor = {20, 20, 50};
-    neonTheme.emptyTileColor = {30, 30, 70};
-    neonTheme.defaultTextColor = {255, 255, 255};
-    neonTheme.tileColors[2] = {0, 255, 255};
-    neonTheme.tileColors[4] = {255, 0, 255};
-    neonTheme.tileColors[8] = {0, 255, 128};
-    neonTheme.tileColors[2048] = {255, 255, 0};
-    themes["Neon"] = neonTheme;
-
     Theme roseGold;
     roseGold.name = "RoseGold";
     roseGold.backgroundColor = {253, 246, 245};
@@ -91,6 +79,9 @@ bool ThemeManager::setTheme(const std::string& themeName) {
         currentThemeName = themeName;
         return true;
     }
+    // Unknown or legacy saved theme names (including the removed Neon theme)
+    // fall back to Classic instead of leaving a stale selection active.
+    currentThemeName = "Classic";
     return false;
 }
 
