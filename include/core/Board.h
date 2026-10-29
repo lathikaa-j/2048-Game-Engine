@@ -46,5 +46,6 @@ public:
     bool operator==(const Board& other) const;
     bool operator!=(const Board& other) const;
 
+    int getHighestTile() const;
     friend std::ostream& operator<<(std::ostream& os, const Board& board);
 };

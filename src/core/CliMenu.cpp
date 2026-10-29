@@ -1,5 +1,6 @@
-#include "../../include/core/CliMenu.h"
+#include "core/CliMenu.h"
 #include <iostream>
+#include <limits>
 
 void CLIMenu::displayMainMenu() const {
 
@@ -14,6 +15,13 @@ void CLIMenu::displayMainMenu() const {
 
 int CLIMenu::getUserChoice() const {
     int choice;
-    std::cin >> choice;
+    // Loop until we successfully extract an integer
+    while (!(std::cin >> choice)) {
+        // Clear the fail state
+        std::cin.clear();
+        // Ignore the rest of the garbage on the line
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Invalid input. Please enter a number: ";
+    }
     return choice;
 }
