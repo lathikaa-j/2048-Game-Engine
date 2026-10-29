@@ -176,7 +176,21 @@ bool Board::operator==(const Board& other) const {
 bool Board::operator!=(const Board& other) const {
     return !(*this == other);
 }
+int Board::getHighestTile() const {
+    int maxTile = 0;
 
+    // Iterate through the entire grid to find the highest value
+    for (int y = 0; y < boardSize; ++y) {
+        for (int x = 0; x < boardSize; ++x) {
+                int currentValue = grid[y][x].getValue();
+                if (currentValue > maxTile) {
+                    maxTile = currentValue;
+            }
+        }
+    }
+
+    return maxTile;
+}
 std::ostream& operator<<(std::ostream& os, const Board& board) {
     for (std::size_t row = 0; row < board.boardSize; ++row) {
         for (std::size_t col = 0; col < board.boardSize; ++col) {

@@ -1,21 +1,21 @@
 #ifndef GAME_MODES_H
 #define GAME_MODES_H
 
-enum class Mode {
-    STANDARD,
-    ENDLESS,
-    TARGET
-};
+#include "Board.h"
 
-class GameModes {
+// Assuming you have a base class, or just a standalone TargetMode manager
+class TargetMode {
 private:
-    Mode currentMode = Mode::STANDARD;
-    int targetTile = 2048; // Default win condition for Standard mode
+    int targetTile;
 
 public:
-    void setMode(Mode mode, int customTarget = 2048);
-    Mode getCurrentMode() const;
-    bool checkWinCondition(int highestTileOnBoard) const;
+    // Constructor now requires the user's chosen target
+    TargetMode(int target);
+
+    // Function to check if the user has reached their custom goal
+    bool isTargetReached(const Board& board) const;
+    
+    int getTarget() const;
 };
 
-#endif
+#endif // GAME_MODES_H
