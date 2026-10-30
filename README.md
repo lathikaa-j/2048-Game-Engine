@@ -57,7 +57,7 @@ Choose **Game Modes** from the main menu. The selection applies to newly started
 
 ## Themes
 
-Select **Themes** from the main menu. The available themes are **Classic**, **Dark**, **Matcha**, **RoseGold**, and **StarryNight**. Neon is not available.
+Select **Themes** from the main menu. The available themes are **Classic**, **Dark**, **Matcha**, **RoseGold**, and **StarryNight**.
 
 ## Technologies
 
