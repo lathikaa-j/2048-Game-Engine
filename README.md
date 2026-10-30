@@ -10,6 +10,8 @@ A modular, object-oriented implementation of 2048 with an SFML desktop interface
 - [Themes](#themes)
 - [Technologies](#technologies)
 - [Architecture](#architecture)
+- [UML Class Diagram](#uml-class-diagram)
+- [System Architecture Diagram](#system-architecture-diagram)
 - [OOP concepts](#object-oriented-programming-concepts)
 - [Project structure](#project-structure)
 - [Setup and build](#installation-and-setup)
@@ -97,13 +99,234 @@ The code separates the SFML presentation layer (`src/ui/`) from the game and ses
 
 SFML events enter `Application`. Menu and mouse events are handled by the application; gameplay key events are passed to `InputHandler`, which calls `Game`. The engine updates its board, score, state, and undo history. `Application` records successful activity in `Session`, and `Renderer` draws the resulting game state on the next frame.
 
-### Architecture diagrams
+## UML Class Diagram
 
-The repository diagrams are retained for reference, but **both are outdated and do not fully represent the current application**. `Architecture.png` depicts a terminal interface alongside the GUI, while the current built application is SFML-based; `UML.png` omits current classes and has stale state/class details. Use the source code and the descriptions above as the current architecture reference.
+The diagram below reflects the classes and ownership visible in the current implementation. `Board` stores base `Tile` values; obstacles are represented by the value `-1`. `ObstacleTile` is a polymorphic `Tile` subtype in the code, but the current `Board` implementation does not instantiate it for obstacle cells.
 
-![Architecture diagram (outdated; reference only)](Architecture.png)
+```mermaid
+classDiagram
+    class Game {
+        -Board board
+        -ScoreManager score
+        -GameModes modes
+        -GameState state
+        -History~GameSnapshot~ history
+        +newGame()
+        +move(Direction) bool
+        +undo() bool
+        +pause()
+        +resume()
+        +getBoard() Board
+        +getScore() int
+        +getState() GameState
+    }
+    class Board {
+        -size_t boardSize
+        -vector~vector<Tile>~ grid
+        +getSize() size_t
+        +getTile(row, col) Tile
+        +moveLeft() bool
+        +moveRight() bool
+        +moveUp() bool
+        +moveDown() bool
+        +addRandomTile() bool
+        +addRandomObstacle() bool
+        +canMove() bool
+    }
+    class Tile {
+        #int value
+        +getValue() int
+        +isEmpty() bool
+        +canMergeWith(other) bool
+        +isMovable() bool
+    }
+    class ObstacleTile {
+        +ObstacleTile()
+        +canMergeWith(other) bool
+        +isMovable() bool
+    }
+    class GameModes {
+        -Mode currentMode
+        -int targetTile
+        +setMode(mode, customTarget)
+        +getCurrentMode() Mode
+        +checkWinCondition(highestTile) bool
+    }
+    class Session {
+        -Game game
+        -PlayerSystem players
+        -GameModes selectedMode
+        -HighScoreSystem scores
+        -map~string, Statistics~ statistics
+        +start()
+        +restart()
+        +observeMove(before)
+        +save(message) bool
+        +load(message) bool
+        +close()
+    }
+    class ScoreManager {
+        -int currentScore
+        +addMergeScore(value)
+        +resetScore()
+        +getCurrentScore() int
+    }
+    class PlayerSystem {
+        -unordered_map~string, PlayerProfile~ profiles
+        -string activePlayer
+        +getPlayers() vector~string~
+        +createProfile(username) bool
+        +selectPlayer(username) bool
+    }
+    class HighScoreSystem {
+        -vector~LeaderboardEntry~ leaderboard
+        +getEntries() vector~LeaderboardEntry~
+        +registerScore(username, score)
+    }
+    class Statistics {
+        -int totalMoves
+        -int bestTile
+        -int gamesPlayed
+        +incrementMoves()
+        +updateBestTile(value)
+        +incrementGamesPlayed()
+    }
+    class SaveGame {
+        +saveState(username, score, boardData) bool
+    }
+    class LoadGame {
+        +loadState(username, outScore, outBoardData) bool
+    }
+    class FileManager {
+        +writeToFile(filename, content)$ bool
+        +readFromFile(filename)$ string
+    }
+    class Application {
+        -Renderer renderer
+        -InputHandler input
+        -Session session
+        -ThemeManager themeManager
+        -MenuScreen menu
+        +run() int
+    }
+    class Renderer {
+        -Theme theme
+        +render(window, game)
+        +setTheme(theme)
+        +restartClicked(event, point, game) bool
+    }
+    class InputHandler {
+        +handleEvent(event, game, gameplayOwnsFocus) Result
+    }
+    class History~T~ {
+        -vector~T~ states
+        +push(state)
+        +pop() T
+        +top() T
+        +empty() bool
+        +clear()
+    }
+    class ThemeManager {
+        -map~string, Theme~ themes
+        -string currentThemeName
+        +setTheme(name) bool
+        +getCurrentTheme() Theme
+        +getAvailableThemes() vector~string~
+    }
+    class MenuScreen {
+        -vector~Action~ actions
+        +add(label, action)
+        +draw(window, font)
+        +click(point)
+    }
+    class GameSnapshot {
+        +Board board
+        +int score
+        +GameState state
+    }
 
-![UML diagram (outdated; reference only)](UML.png)
+    ObstacleTile --|> Tile : specializes
+    Game "1" *-- "1" Board : owns
+    Game "1" *-- "1" ScoreManager : owns
+    Game "1" *-- "1" GameModes : owns
+    Game "1" *-- "1" History~GameSnapshot~ : owns undo history
+    History~GameSnapshot~ "1" *-- "0..*" GameSnapshot : stores
+    Board "1" *-- "9..25" Tile : grid cells
+    Session "1" *-- "1" Game : coordinates
+    Session "1" *-- "1" PlayerSystem : owns
+    Session "1" *-- "1" GameModes : selected mode
+    Session "1" *-- "1" HighScoreSystem : owns
+    Session "1" *-- "0..*" Statistics : per-player records
+    Application "1" *-- "1" Renderer : owns
+    Application "1" *-- "1" InputHandler : owns
+    Application "1" *-- "1" Session : owns
+    Application "1" *-- "1" ThemeManager : owns
+    Application "1" *-- "1" MenuScreen : owns
+    Renderer --> "1" Game : reads current state
+    InputHandler --> "1" Game : sends gameplay commands
+    Renderer ..> ThemeManager : receives selected Theme
+    Session ..> SaveGame : creates for save
+    Session ..> LoadGame : creates for load
+    SaveGame ..> FileManager : writes through
+    LoadGame ..> FileManager : reads through
+```
+
+`SaveGame` and `LoadGame` use `FileManager`'s static file operations. The `Session` constructs these helpers when needed, so the diagram shows dependencies rather than persistent ownership. The board grid contains 9, 16, or 25 cells for supported dimensions.
+
+## System Architecture Diagram
+
+The flowchart separates the SFML-facing presentation, application coordination, core game logic, and file persistence. Arrows show event, command, state, and data movement implemented by the application.
+
+```mermaid
+flowchart TB
+    subgraph presentation[Presentation layer]
+        sfml[SFML window, events, and mouse input]
+        renderer[Renderer\nDraws board, score, state, and theme]
+    end
+
+    subgraph application[Application layer]
+        app[Application\nEvent loop, menus, and screen navigation]
+        input[InputHandler\nMaps gameplay keys to commands]
+        session[Session\nCoordinates game, player, and persistence]
+        themes[ThemeManager\nProvides selected theme]
+    end
+
+    subgraph core[Core engine]
+        game[Game\nMoves, score, state, and undo]
+        board[Board and Tile grid]
+        modes[GameModes\nStandard, Endless, Target]
+        obstacles[Obstacle logic\nFixed -1 cells block movement]
+        players[PlayerSystem]
+        scores[HighScoreSystem and Statistics]
+    end
+
+    subgraph persistence[Persistence layer]
+        save[SaveGame]
+        load[LoadGame]
+        files[FileManager]
+        savefiles[(Player save text files)]
+    end
+
+    sfml -->|SFML events| app
+    app -->|gameplay key events| input
+    input -->|move, undo, restart| game
+    app -->|start, restart, observe moves| session
+    session -->|owns active game| game
+    game -->|moves and queries| board
+    game -->|checks win target| modes
+    board -->|applies fixed-cell rules| obstacles
+    session -->|profile selection| players
+    session -->|records scores and statistics| scores
+    app -->|render frame| renderer
+    renderer -->|reads board, score, and state| game
+    themes -->|selected palette| app
+    app -->|sets render theme| renderer
+    session -->|save request| save
+    session -->|load request| load
+    save -->|write| files
+    load -->|read| files
+    files -->|read/write| savefiles
+```
 
 ## Object-Oriented Programming concepts
 
@@ -144,12 +367,10 @@ The repository diagrams are retained for reference, but **both are outdated and 
 │   ├── InputRegression.cpp
 │   ├── IntegrationRegression.cpp
 │   └── Regression.cpp
-├── Architecture.png
 ├── CMakeLists.txt
 ├── LICENSE
 ├── main.cpp
 ├── README.md
-└── UML.png
 ```
 
 ## Installation and setup
